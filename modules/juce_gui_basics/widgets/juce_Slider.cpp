@@ -947,7 +947,8 @@ public:
                 triggerChangeMessage (sendNotificationAsync);
 
             currentDrag.reset();
-            popupDisplay.reset();
+			if (popupDisplay != nullptr)
+				popupDisplay->startFade();
 
             if (style == IncDecButtons)
             {
@@ -957,7 +958,7 @@ public:
         }
         else if (popupDisplay != nullptr)
         {
-            popupDisplay->startTimer (200);
+            popupDisplay.reset();
         }
 
         currentDrag.reset();
@@ -987,7 +988,7 @@ public:
 
     void mouseExit()
     {
-        popupDisplay.reset();
+		//popupDisplay.reset();
     }
 
     void showPopupDisplay()
@@ -1296,6 +1297,7 @@ public:
             setAlwaysOnTop (true);
             setAllowedPlacement (owner.getLookAndFeel().getSliderPopupPlacement (s));
             setLookAndFeel (&s.getLookAndFeel());
+			setFadeTimes(0.5f, 0.4f, 60);
         }
 
         ~PopupDisplayComponent() override
@@ -1324,11 +1326,65 @@ public:
             repaint();
         }
 
+		void startFade()
+		{
+			startTimerHz(refreshRate);
+			popupIsHolding = true;
+		}
+
+		void setFadeTimes(float holdSeconds = 0, float fadeSeconds = 0, int framesPerSecond = 60)
+		{
+			refreshRate = jmax(1,framesPerSecond);
+
+			holdTimeSeconds = jmax(0.0f, holdSeconds);
+			holdSteps = roundFloatToInt(refreshRate * holdTimeSeconds);
+
+			fadeTimeSeconds = jmax(0.0f, fadeSeconds);
+			fadeSteps = roundFloatToInt(refreshRate * fadeTimeSeconds);
+		}
+
         void timerCallback() override
         {
-            stopTimer();
-            owner.pimpl->popupDisplay.reset();
+			if (popupIsHolding)
+			{
+				if (currentHoldStep == holdSteps)
+				{
+					popupIsHolding = false;
+					currentHoldStep = 0;
+					popupIsFading = true;
+					return;
+				}
+				else
+				{
+					currentHoldStep++;
+					return;
+				}
+			}
+
+			if (popupIsFading)
+			{
+				if (currentFadeStep == fadeSteps)
+				{
+					popupIsFading = false;
+					currentFadeStep = 0;
+					return;
+				}
+				else
+				{
+					setAlpha((float)(fadeSteps - currentFadeStep) / fadeSteps);
+					currentFadeStep++;
+					return;
+				}
+
+			}
+
+			stopTimer();
+			owner.pimpl->popupDisplay.reset();
+
+            
         }
+
+		const bool isPopupFading() { return popupIsFading; };
 
     private:
         static float getApproximateScaleFactor (Component* targetComponent)
@@ -1350,7 +1406,15 @@ public:
         Slider& owner;
         Font font;
         String text;
-
+		bool popupIsFading = false;
+		bool popupIsHolding = false;
+		int  refreshRate = 60;
+		float holdTimeSeconds = 0.0f;
+		int holdSteps = 0;
+		int currentHoldStep = 0;
+		float fadeTimeSeconds = 0.0f;
+		int fadeSteps = 0;
+		int currentFadeStep = 0;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PopupDisplayComponent)
     };
 
