@@ -1337,10 +1337,10 @@ public:
 			refreshRate = jmax(1,framesPerSecond);
 
 			holdTimeSeconds = jmax(0.0f, holdSeconds);
-			holdSteps = roundFloatToInt(refreshRate * holdTimeSeconds);
+			holdSteps = roundToInt(refreshRate * holdTimeSeconds);
 
 			fadeTimeSeconds = jmax(0.0f, fadeSeconds);
-			fadeSteps = roundFloatToInt(refreshRate * fadeTimeSeconds);
+			fadeSteps = roundToInt(refreshRate * fadeTimeSeconds);
 		}
 
         void timerCallback() override
