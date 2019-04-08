@@ -752,7 +752,10 @@ public:
     {
         auto mousePos = (isHorizontal() || style == RotaryHorizontalDrag) ? e.position.x : e.position.y;
         double newPos = 0;
-        fineDragReset (e);
+
+        if (fineDraggingEnabled)
+            fineDragReset (e);
+
         auto scaledPixelsForFullExtent = isFineDragging ? pixelsForFullDragExtent * fineSensitivityMultiplier
                                                         : pixelsForFullDragExtent;
 
