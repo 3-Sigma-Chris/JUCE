@@ -732,10 +732,29 @@ public:
         }
     }
 
+    void fineDragReset(const MouseEvent& e)
+    {
+        if (isFineDragMode(e.mods) && !isFineDragging)
+        {
+            isFineDragging = true;
+            mouseDragStartPos = e.position;
+            valueOnMouseDown = valueWhenLastDragged;
+        }
+        else if (!isFineDragMode(e.mods) && isFineDragging)
+        {
+            isFineDragging = false;
+            mouseDragStartPos = e.position;
+            valueOnMouseDown = valueWhenLastDragged;
+        }
+    }
+
     void handleAbsoluteDrag (const MouseEvent& e)
     {
         auto mousePos = (isHorizontal() || style == RotaryHorizontalDrag) ? e.position.x : e.position.y;
         double newPos = 0;
+        fineDragReset (e);
+        auto scaledPixelsForFullExtent = isFineDragging ? pixelsForFullDragExtent * fineSensitivityMultiplier
+                                                        : pixelsForFullDragExtent;
 
         if (style == RotaryHorizontalDrag
             || style == RotaryVerticalDrag
@@ -751,7 +770,7 @@ public:
                               : mouseDragStartPos.y - e.position.y;
 
             newPos = owner.valueToProportionOfLength (valueOnMouseDown)
-                       + mouseDiff * (1.0 / pixelsForFullDragExtent);
+                       + mouseDiff * (1.0 / scaledPixelsForFullExtent);
 
             if (style == IncDecButtons)
             {
@@ -765,7 +784,7 @@ public:
                                + (mouseDragStartPos.y - e.position.y);
 
             newPos = owner.valueToProportionOfLength (valueOnMouseDown)
-                       + mouseDiff * (1.0 / pixelsForFullDragExtent);
+                       + mouseDiff * (1.0 / scaledPixelsForFullExtent);
         }
         else
         {
@@ -893,7 +912,7 @@ public:
                 if (isAbsoluteDragMode (e.mods) || (normRange.end - normRange.start) / sliderRegionSize < normRange.interval)
                 {
                     dragMode = absoluteDrag;
-                    handleAbsoluteDrag (e);
+                    handleAbsoluteDrag (e); 
                 }
                 else
                 {
@@ -1103,6 +1122,11 @@ public:
         return isVelocityBased == (userKeyOverridesVelocity && mods.testFlags (modifierToSwapModes));
     }
 
+    bool isFineDragMode(ModifierKeys mods) const
+    {
+        return mods.testFlags(modifierForFineMode);
+    }
+
     void restoreMouseIfHidden()
     {
         for (auto& ms : Desktop::getInstance().getMouseSources())
@@ -1250,6 +1274,7 @@ public:
     int sliderRegionStart = 0, sliderRegionSize = 1;
     int sliderBeingDragged = -1;
     int pixelsForFullDragExtent = 250;
+    int fineSensitivityMultiplier = 10;
     Time lastMouseWheelTime;
     Rectangle<int> sliderRect;
     std::unique_ptr<DragInProgress> currentDrag;
@@ -1260,11 +1285,13 @@ public:
     int textBoxWidth = 80, textBoxHeight = 20;
     IncDecButtonMode incDecButtonMode = incDecButtonsNotDraggable;
     ModifierKeys::Flags modifierToSwapModes = ModifierKeys::ctrlAltCommandModifiers;
-
+    ModifierKeys::Flags modifierForFineMode = ModifierKeys::shiftModifier;
     bool editableText = true;
     bool doubleClickToValue = false;
     bool isVelocityBased = false;
     bool userKeyOverridesVelocity = true;
+    bool isFineDragging = false;
+    bool fineDraggingEnabled = true;
     bool incDecButtonsSideBySide = false;
     bool sendChangeOnlyOnRelease = false;
     bool showPopupOnDrag = false;
@@ -1531,6 +1558,21 @@ void Slider::setMouseDragSensitivity (int distanceForFullScaleDrag)
 
     pimpl->pixelsForFullDragExtent = distanceForFullScaleDrag;
 }
+
+void Slider::setFineDragMode(bool fineDraggingEnabled) { pimpl->fineDraggingEnabled = fineDraggingEnabled; }
+bool Slider::getFineDragMode() const noexcept          { return pimpl->fineDraggingEnabled; }
+
+void Slider::setFineModeParameters(int sensitivityMultiplier,
+                                   ModifierKeys::Flags keys)
+{
+    jassert(sensitivityMultiplier > 0);
+    jassert(keys != pimpl->modifierToSwapModes);
+
+    pimpl->fineSensitivityMultiplier = sensitivityMultiplier;
+    pimpl->modifierForFineMode = keys;
+}
+
+int Slider::getFineModeMultiplier() const noexcept     { return pimpl->fineSensitivityMultiplier; }
 
 void Slider::setIncDecButtonsMode (IncDecButtonMode mode)                   { pimpl->setIncDecButtonsMode (mode); }
 

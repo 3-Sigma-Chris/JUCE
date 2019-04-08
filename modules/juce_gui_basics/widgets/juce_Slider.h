@@ -188,6 +188,43 @@ public:
 
     //==============================================================================
     /** Changes the way the mouse is used when dragging the slider.
+        
+        If true this will enabled "fine" adjustment absolute dragging when holding a specificed modifier key,
+        meaning you will need more mouse input for the same change in a slider.  The default modifier
+        key is shift.
+
+        If false, normal absolute drag behavior will occur unless in Velocty Based mode.
+    */
+    void setFineDragMode(bool fineDraggingEnabled);
+
+    /* Returns true if fine dragging mode is enabled.
+       @see setFineDragMode()
+    */
+    bool getFineDragMode() const noexcept;
+
+    /*
+        Sets the modifier key and sensivity multiplier for "fine" absolute dragging.
+        This simply scales the mouse dragging so you must traverse more pixels for an equivelant
+        change in the slider's value.  If velocity mode is enabled and shares a modifier key with this,
+        Velocity Mode will override this behavior.
+
+        @param sensitivityMultiplier The multiplier used to find the number of pixels required for a full
+                                     length drag.
+        @param flags                 Modifier key to be held down to swap to this mode.
+    */
+    void setFineModeParameters(int sensitivityMultiplier = 10,
+                               ModifierKeys::Flags flags = ModifierKeys::shiftModifier);
+    
+    /** Returns fine drag mode multiplier.
+        @see setFineDragMode()
+    */
+    int getFineModeMultiplier() const noexcept;
+    
+
+
+
+    //==============================================================================
+    /** Changes the way the mouse is used when dragging the slider.
 
         If true, this will turn on velocity-sensitive dragging, so that
         the faster the mouse moves, the bigger the movement to the slider. This
