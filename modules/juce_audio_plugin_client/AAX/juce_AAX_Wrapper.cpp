@@ -473,7 +473,6 @@ namespace AAXClasses
                 {
                     component->setVisible (true);
                     component->addToDesktop (0, nativeViewToAttachTo);
-
                     if (ModifierKeyReceiver* modReceiver = dynamic_cast<ModifierKeyReceiver*> (component->getPeer()))
                         modReceiver->setModifierKeyProvider (this);
                 }
@@ -570,6 +569,7 @@ namespace AAXClasses
                 if (pluginEditor != nullptr)
                 {
                     lastValidSize = pluginEditor->getLocalBounds();
+                    lastValidSize = lastValidSize.transformedBy(pluginEditor->getTransform());
                     setBounds (lastValidSize);
                     pluginEditor->addMouseListener (this, true);
                 }
@@ -617,8 +617,9 @@ namespace AAXClasses
             {
                 if (pluginEditor != nullptr)
                 {
-                    auto w = pluginEditor->getWidth();
-                    auto h = pluginEditor->getHeight();
+                    auto transformedBounds = pluginEditor->getBounds().transformedBy(pluginEditor->getTransform());
+                    auto w = transformedBounds.getWidth();
+                    auto h = transformedBounds.getHeight();
 
                     AAX_Point newSize ((float) h, (float) w);
 
