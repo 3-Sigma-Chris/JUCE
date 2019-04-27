@@ -67,3 +67,6 @@ profile
 **/doxygen/doc
 **/doxygen/build
 extras/Projucer/JUCECompileEngine.dylib
+Fine_Slider.txt
+FineDrag.txt
+Projucer.exe
