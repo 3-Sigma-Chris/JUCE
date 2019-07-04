@@ -1292,7 +1292,7 @@ public:
     bool editableText = true;
     bool doubleClickToValue = false;
     bool isVelocityBased = false;
-    bool userKeyOverridesVelocity = true;
+    bool userKeyOverridesVelocity = false;
     bool isFineDragging = false;
     bool fineDraggingEnabled = true;
     bool incDecButtonsSideBySide = false;
