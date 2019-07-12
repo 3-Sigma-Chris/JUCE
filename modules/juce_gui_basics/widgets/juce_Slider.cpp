@@ -1060,11 +1060,19 @@ public:
 
     void mouseDoubleClick()
     {
-        if (canDoubleClickToValue())
+        // if (canDoubleClickToValue())
+        // {
+        //     DragInProgress drag (*this);
+        //     setValue (doubleClickReturnValue, sendNotificationSync);
+        // }
+
+        if (!popupDisplay)
         {
-            DragInProgress drag (*this);
-            setValue (doubleClickReturnValue, sendNotificationSync);
+            showPopupDisplay();
         }
+
+        popupDisplay->textLabel.showEditor();
+        
     }
 
     double getMouseWheelDelta (double value, double wheelAmount)
@@ -1325,9 +1333,29 @@ public:
                 setTransform (AffineTransform::scale (getApproximateScaleFactor (&s)));
 
             setAlwaysOnTop (true);
+            setInterceptsMouseClicks(true, true);
             setAllowedPlacement (owner.getLookAndFeel().getSliderPopupPlacement (s));
             setLookAndFeel (&s.getLookAndFeel());
-			setFadeTimes(0.5f, 0.4f, 60);
+			setFadeTimes(0.8f, 0.4f, 60);
+
+            textLabel.setFont(font);
+            textLabel.setJustificationType(Justification::centred);
+            textLabel.setColour(Label::ColourIds::textColourId, owner.findColour(TooltipWindow::textColourId, true));
+            textLabel.setEditable(true);
+            textLabel.onEditorShow = [this] ()
+            {
+                stopTimer();
+                popupIsHolding = true;
+                popupIsFading = false;
+                setAlpha(1.0f);
+            };
+            textLabel.onEditorHide = [this] ()
+            {
+                auto value = owner.valueFromTextFunction(textLabel.getText());
+                owner.setValue(value);
+                startFade();
+            };
+            addAndMakeVisible(textLabel);
         }
 
         ~PopupDisplayComponent() override
@@ -1340,7 +1368,7 @@ public:
         {
             g.setFont (font);
             g.setColour (owner.findColour (TooltipWindow::textColourId, true));
-            g.drawFittedText (text, Rectangle<int> (w, h), Justification::centred, 1);
+            //g.drawFittedText (text, Rectangle<int> (w, h), Justification::centred, 1);            
         }
 
         void getContentSize (int& w, int& h) override
@@ -1352,7 +1380,16 @@ public:
         void updatePosition (const String& newText)
         {
             text = newText;
-            BubbleComponent::setPosition (&owner);
+            textLabel.setText(text, dontSendNotification);
+
+            int distFromTar, arrowLen;
+            distFromTar = 15;
+            arrowLen = 10;
+            BubbleComponent::setPosition (&owner, distFromTar, arrowLen);
+
+            int width, height;
+            getContentSize(width, height);
+            textLabel.setBounds(distFromTar, (getHeight() - height) * 0.5f, width, height);
             repaint();
         }
 
@@ -1416,6 +1453,7 @@ public:
 
 		const bool isPopupFading() { return popupIsFading; };
 
+        Label textLabel;//Label used for text so you can edit it
     private:
         static float getApproximateScaleFactor (Component* targetComponent)
         {
